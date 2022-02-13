@@ -52,7 +52,7 @@ namespace Shifts_ETL.Com.Rest
             do
             {
                 results.AddRange(response.Results);
-
+                
                 request = new RestRequest(response.Links[0].Next, Method.GET);
                 response = DoExecute<ShiftListResponse>(request);
             }

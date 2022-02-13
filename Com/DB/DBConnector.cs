@@ -33,7 +33,7 @@ namespace Shifts_ETL.Com.DB
                     trans.Commit();
                 }
                 catch(Exception ex) 
-                {
+        {
 
                     trans.Rollback();
                 }
