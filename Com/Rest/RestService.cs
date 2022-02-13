@@ -49,13 +49,14 @@ namespace Shifts_ETL.Com.Rest
 
             var response = DoExecute<ShiftListResponse>(request);
 
-            while(response != null && response.Links != null && response.Links.Any() && response.Links[0].Next != string.Empty)
+            do
             {
                 results.AddRange(response.Results);
-                
+
                 request = new RestRequest(response.Links[0].Next, Method.GET);
                 response = DoExecute<ShiftListResponse>(request);
             }
+            while (response != null && response.Links != null && response.Links.Count > 0 && !string.IsNullOrEmpty(response.Links[0].Next));
 
             return results;
         }
@@ -88,13 +89,13 @@ namespace Shifts_ETL.Com.Rest
                 }
                 else
                 {
-                    log.Debug($"{request.Resource} response {response.Content}, statusCode {response.StatusCode}");
+                    log.Error($"{request.Resource} response {response.Content}, statusCode {response.StatusCode}");
                     return default(T);
                 }
             }
             else
             {
-                log.Debug($"{request.Resource} response {response.Content}, statusCode {response.StatusCode}");
+                log.Error($"{request.Resource} response {response.Content}, statusCode {response.StatusCode}");
                 return default(T);
             }
         }

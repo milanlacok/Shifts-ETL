@@ -24,8 +24,8 @@ namespace Shifts_ETL
             log.Info("Shifts_ETL Start!");
 
 
-            var d = DBConnector.Execute("select * from kpis");
-            //var x = RestService.GetAllShifts();
+            //var d = DBConnector.Execute("select * from kpis");
+            var x = RestService.GetAllShifts();
 
             Console.ReadLine();
         }
