@@ -7,7 +7,7 @@ namespace Shifts_ETL.Models
     public partial class Shift
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public Guid Id { get; set; }
 
         [JsonProperty("date")]
         public string Date { get; set; }
