@@ -85,6 +85,5 @@ namespace Shifts_ETL.Util
 
             return result;
         }
-
     }
 }

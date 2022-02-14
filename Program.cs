@@ -145,24 +145,5 @@ namespace Shifts_ETL
             Console.ReadLine();
             Console.Clear();
         }
-
-
-
-
-
-        //var d = DBConnector.Execute("select * from kpis");
-        //var x = RestService.GetShifts();
-
-        //foreach (var item in x)
-        //{
-        //    DBConnector.StoreShift(item);
-        //}
-
-
-
-        //using (var db = DBConnector.Create()) 
-        //{
-        //    var x = db.ExecuteScalar<int>("select count(*) from kpis");
-        //}
     }
 }
