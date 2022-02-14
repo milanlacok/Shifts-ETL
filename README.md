@@ -1,6 +1,7 @@
 # Shifts-ETL
 Resenje je konzolna aplikacija koja sluzi da u koracima mogu da se testiraju faze samog zadatka.
 
+Za pokretanje je potreban Visual Studio i da se nabilda pokretanjem na "Start"
 Imamo app.config file u kom se podesava connectionStrings ka bazi i endpoint na koji se kacimo sa RESTom. Podeseno je po specifikaciji zadatka tako da sa default doker okruzenjem bi trebalo sve da radi.
 
 Tehnologije:
