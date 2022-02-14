@@ -1,18 +1,11 @@
-﻿using RestSharp;
-using RestSharp.Authenticators;
-using Shifts_ETL.Com.DB;
+﻿using Shifts_ETL.Com.DB;
 using Shifts_ETL.Com.Rest;
 using Shifts_ETL.KPIs;
 using Shifts_ETL.Models;
-using Shifts_ETL.Models.Response;
 using Shifts_ETL.Util;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Shifts_ETL
@@ -40,8 +33,7 @@ namespace Shifts_ETL
                     Console.WriteLine("  2. Store all shifts to database");
                     Console.WriteLine("  3. Store all shifts to database (optimised)");
                     Console.WriteLine("  4. Calculate defined KPIs");
-                    Console.WriteLine("  5. Get shifts (start-limit)");
-                    Console.WriteLine("  6. Clear all data in db (no turning back :))");
+                    Console.WriteLine("  5. Clear all data in db (no turning back :))");
                     Console.WriteLine("  0. Exit");
                     Console.WriteLine(" -------------------------------------------------");
                     Console.WriteLine("Pick an option:");
@@ -65,9 +57,6 @@ namespace Shifts_ETL
                         CalculateKPIs();
                         break;
                     case 5:
-                        //GetShiftsByPageOption();
-                        break;
-                    case 6:
                         DeleteAllData();
                         break;
                     case 0:
@@ -86,13 +75,8 @@ namespace Shifts_ETL
         private static void CalculateKPIs()
         {
             new NumberOfPaidBreaks().CalculatePaidBreaks();
-            new MaxAllowance().CalculatePaidBreaks();
+            new MaxAllowance().CalculateMaxAllowanceInLastTwoWeeks();
             AnyKey();
-        }
-
-        private static void GetShiftsByPageOption()
-        {
-            throw new NotImplementedException();
         }
 
         private static void StoreAllShiftsOption(bool parallel)
