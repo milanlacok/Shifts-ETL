@@ -48,13 +48,13 @@ namespace Shifts_ETL.Com.Rest
             request.AddParameter("limit", 30, ParameterType.GetOrPost);
 
             var response = DoExecute<ShiftListResponse>(request);
+            results.AddRange(response.Results);
 
             do
             {
-                results.AddRange(response.Results);
-                
                 request = new RestRequest(response.Links[0].Next, Method.GET);
                 response = DoExecute<ShiftListResponse>(request);
+                results.AddRange(response.Results);
             }
             while (response != null && response.Links != null && response.Links.Count > 0 && !string.IsNullOrEmpty(response.Links[0].Next));
 
@@ -71,7 +71,7 @@ namespace Shifts_ETL.Com.Rest
 
             stopwatch.Stop();
 
-            log.Debug($"Execution of {request.Resource} took {stopwatch.Elapsed}"); //, response is {response.Content}
+            log.Info($"Execution of {request.Resource} took {stopwatch.Elapsed}"); //, response is {response.Content}
 
             if (response.ErrorException != null)
             {

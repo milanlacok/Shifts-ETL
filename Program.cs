@@ -2,8 +2,10 @@
 using RestSharp.Authenticators;
 using Shifts_ETL.Com.DB;
 using Shifts_ETL.Com.Rest;
+using Shifts_ETL.KPIs;
 using Shifts_ETL.Models;
 using Shifts_ETL.Models.Response;
+using Shifts_ETL.Util;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -18,33 +20,35 @@ namespace Shifts_ETL
     class Program
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         private static List<Shift> shiftList;
 
         static void Main(string[] args)
         {
-            log.Info("Shifts_ETL Start!");
+            log.Debug("Shifts_ETL Start!");
 
             int opt;
+            bool parsed;
+
             do
             {
-                opt = -1;
-                Console.WriteLine("---------------------------------------------"); 
-                Console.WriteLine("1. Get all shifts");
-                Console.WriteLine("2. Store all shifts and relational objects");
-                Console.WriteLine("3. Get shifts (start-limit)");
-                Console.WriteLine("4. ");
-                Console.WriteLine("5. ");
-                Console.WriteLine("6.");
-                Console.WriteLine("7.");
-                Console.WriteLine("8.");
-                Console.WriteLine("9. Clear all data in db (no turning back :))");
-                Console.WriteLine("0. Exit");
-                Console.WriteLine("---------------------------------------------");
-                Console.WriteLine("Pick an option:");
-                opt = int.Parse(Console.ReadLine());
+                do
+                {
+                    opt = -1;
+                    FunUtils.Logo();
+                    Console.WriteLine(" -------------------------------------------------");
+                    Console.WriteLine("  1. Get all shifts to memory");
+                    Console.WriteLine("  2. Store all shifts to database");
+                    Console.WriteLine("  3. Store all shifts to database (optimised)");
+                    Console.WriteLine("  4. Calculate defined KPIs");
+                    Console.WriteLine("  5. Get shifts (start-limit)");
+                    Console.WriteLine("  6. Clear all data in db (no turning back :))");
+                    Console.WriteLine("  0. Exit");
+                    Console.WriteLine(" -------------------------------------------------");
+                    Console.WriteLine("Pick an option:");
+                    parsed = int.TryParse(Console.ReadLine(), out opt);
 
-                Console.Clear();
+                    Console.Clear();
+                } while (!parsed || !opt.In(1, 2, 3, 4, 5, 6, 0));
 
                 switch (opt)
                 {
@@ -52,53 +56,38 @@ namespace Shifts_ETL
                         GetAllShiftsOption();
                         break;
                     case 2:
-                        StoreAllShiftsOption();
+                        StoreAllShiftsOption(false);
                         break;
                     case 3:
-                        GetShiftsByPageOption();
+                        StoreAllShiftsOption(true);
                         break;
                     case 4:
+                        CalculateKPIs();
                         break;
                     case 5:
+                        //GetShiftsByPageOption();
                         break;
                     case 6:
-                        break;
-                    case 7:
-                        break;
-                    case 8:
-                        break;
-                    case 9:
                         DeleteAllData();
                         break;
                     case 0:
                         Console.WriteLine("Thanks for useing this app!");
-                        Console.ReadLine();
+                        FunUtils.Credits();
+                        AnyKey();
                         return;
                     default:
                         break;
                 }
 
-                Console.Clear();
             }
             while (opt != 0);
+        }
 
+        private static void CalculateKPIs()
+        {
+            new NumberOfPaidBreaks().CalculatePaidBreaks();
 
-
-
-            //var d = DBConnector.Execute("select * from kpis");
-            //var x = RestService.GetShifts();
-
-            //foreach (var item in x)
-            //{
-            //    DBConnector.StoreShift(item);
-            //}
-
-
-
-            //using (var db = DBConnector.Create()) 
-            //{
-            //    var x = db.ExecuteScalar<int>("select count(*) from kpis");
-            //}
+            AnyKey();
         }
 
         private static void GetShiftsByPageOption()
@@ -106,26 +95,89 @@ namespace Shifts_ETL
             throw new NotImplementedException();
         }
 
-        private static void StoreAllShiftsOption()
+        private static void StoreAllShiftsOption(bool parallel)
         {
-            foreach (var item in shiftList)
+            var sw = new Stopwatch();
+            sw.Start();
+            if (parallel)
             {
-                DBConnector.StoreShift(item);
+                Parallel.ForEach(shiftList, item =>
+                {
+                    DBConnector.StoreShift(item);
+                });
             }
+            else
+            {
+                foreach (var item in shiftList)
+                    DBConnector.StoreShift(item);
+            }
+            sw.Stop();
+
+            log.Info($"Insert performance (Optimised={parallel}) - {sw.ElapsedMilliseconds}ms");
+
+            AnyKey();
         }
+
+
 
         private static void GetAllShiftsOption()
         {
-            Console.WriteLine("Getting all the shifts from endpoint.");
+            log.Info("Getting all the shifts from endpoint.");
            
-            shiftList = RestService.GetShifts();
+            shiftList = RestService.GetAllShifts();
 
-            Console.WriteLine($"Recieved { shiftList.Count } items.");
+            log.Info($"Recieved { shiftList.Count } items.");
+
+            AnyKey();
         }
 
         private static void DeleteAllData()
         {
-            DBConnector.DeleteAllData();
+            string response;
+            do
+            {
+                Console.Clear();
+                Console.WriteLine("Are you really shore you want to do this? (y/n)");
+                response = Console.ReadLine();
+
+            } while (!response.ToLower().In("y", "yes", "n", "no"));
+
+
+            if (response.ToLower().In("y", "yes"))
+            {
+                DBConnector.DeleteAllShifts();
+                DBConnector.DeleteAllKPIs();
+                FunUtils.Boom();
+                AnyKey();
+            }
+            else
+                Console.Clear();
         }
+
+        private static void AnyKey()
+        {
+            Console.WriteLine("Press any key...");
+            Console.ReadLine();
+            Console.Clear();
+        }
+
+
+
+
+
+        //var d = DBConnector.Execute("select * from kpis");
+        //var x = RestService.GetShifts();
+
+        //foreach (var item in x)
+        //{
+        //    DBConnector.StoreShift(item);
+        //}
+
+
+
+        //using (var db = DBConnector.Create()) 
+        //{
+        //    var x = db.ExecuteScalar<int>("select count(*) from kpis");
+        //}
     }
 }

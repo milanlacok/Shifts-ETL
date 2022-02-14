@@ -3,9 +3,10 @@ using System;
 
 namespace Shifts_ETL.Models.DBModels
 {
-    [PrimaryKey("kpi_name, kpi_date")]
+    [TableName("kpis")]
+    [PrimaryKey("kpi_id", AutoIncrement = true)]
 
-    class Kpis
+    public class Kpis
     {
         public int kpi_id { get; set; }
         public string kpi_name { get; set; }

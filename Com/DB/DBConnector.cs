@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using PetaPoco;
 using Shifts_ETL.Models;
+using Shifts_ETL.Models.DBModels;
 using Shifts_ETL.Util;
 using System;
 using System.Collections.Generic;
@@ -18,15 +19,49 @@ namespace Shifts_ETL.Com.DB
         static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         static string connectionString = ConfigurationManager.ConnectionStrings["postgres"].ConnectionString;
 
-        static Stopwatch sw;
+        private const string SHIFT_ID = "shift_id";
+        private const string KPI_NAME = "kpi_name";
+        private const string KPI_DATE = "kpi_date";
 
-        public static Database Create()
+        private static Stopwatch sw;
+
+        private static Database Create()
         {
             sw = new Stopwatch();
             return new Database(connectionString, new PostgreSQLDatabaseProvider());
         }
 
-        public static int DeleteAllData()
+        public static int GetNumberOfPaidBreaks()
+        {
+            int count = 0;
+            var quary = "select count(*) from breaks where breaks.is_paid = true";
+
+            using (var db = Create())
+            {
+                try
+                {
+                    sw.Start();
+                    db.BeginTransaction();
+
+                    count = db.ExecuteScalar<int>(quary);
+
+                    db.CompleteTransaction();
+                    sw.Stop();
+
+                    log.Info($"Execution of GetNumberOfPaidBreaks took {sw.ElapsedMilliseconds}ms");
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex.Message, ex);
+                    db.AbortTransaction();
+                    sw.Stop();
+                }
+            }
+
+            return count;
+        }
+
+        public static int DeleteAllShifts()
         {
             var rows = 0;
             var quary = "delete from shifts";
@@ -35,35 +70,74 @@ namespace Shifts_ETL.Com.DB
             {
                 try
                 {
-                    db.BeginTransaction();
                     sw.Start();
+                    db.BeginTransaction();
 
                     rows = db.Execute(quary);
                     
-                    sw.Stop();
                     db.CompleteTransaction();
+                    sw.Stop();
 
-                    log.Info($"Execution of DeleteAllData took {sw.Elapsed}");
+                    log.Info($"Execution of DeleteAllShifts took {sw.ElapsedMilliseconds}ms");
                 }
                 catch (Exception ex)
                 {
                     log.Error(ex.Message, ex);
                     db.AbortTransaction();
+                    sw.Stop();
                 }
             }
 
             return rows;
         }
 
-        public static int StoreShift(Shift shift)
+        public static int DeleteAllKPIs()
         {
+            var rows = 0;
+            var quary = "delete from kpis";
+
             using (var db = Create())
             {
                 try
                 {
+                    sw.Start();
+                    db.BeginTransaction();
+
+                    rows = db.Execute(quary);
+
+                    db.CompleteTransaction();
+                    sw.Stop();
+
+                    log.Info($"Execution of DeleteAllKPIs took {sw.ElapsedMilliseconds}ms");
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex.Message, ex);
+                    db.AbortTransaction();
+                    sw.Stop();
+                }
+            }
+
+            return rows;
+        }
+
+        public static void StoreShift(Shift shift)
+        {
+            using (var db = Create())
+            {
+                if (db.Fetch<Shifts>($"WHERE { SHIFT_ID }=@0", shift.Id).Any())
+                {
+                    log.Info($"Shift with Id = \"{shift.Id}\" already exists. Skipping...");
+                    return;
+                }
+
+                try
+                {
+                    sw.Start();
                     db.BeginTransaction();
 
                     var dbShift = CustomMapping.MapShifts(shift);
+
                     var dbShiftId = db.Insert("shifts", dbShift);
 
                     foreach(var allowance in shift.Allowances)
@@ -88,48 +162,52 @@ namespace Shifts_ETL.Com.DB
                     }
 
                     db.CompleteTransaction();
+                    sw.Stop();
+
+                    log.Info($"Execution of StoreShift took {sw.ElapsedMilliseconds}ms");
                 }
                 catch(Exception ex)
                 {
                     log.Error(ex.Message, ex);
                     db.AbortTransaction();
+                    sw.Stop();
                 }
             }
-
-            return 1;
         }
 
-        //public static bool Execute(string sql)
-        //{
-        //    using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
-        //    {
-        //        connection.Open();
-        //        NpgsqlTransaction trans = connection.BeginTransaction();
-                
-        //        try
-        //        {
-        //            NpgsqlCommand cmd = new NpgsqlCommand(sql, connection, trans);
+        public static bool StoreKPIs(Kpis kpi)
+        {
+            using (var db = Create())
+            {
+                if (db.Fetch<Kpis>($"WHERE { KPI_NAME }=@0 AND {KPI_DATE}=@1", kpi.kpi_name, kpi.kpi_date.Date ).Any())
+                {
+                    log.Info($"KPI with kpi_name = \"{ kpi.kpi_name }\" and kpi_date = \"{ kpi.kpi_date.ToShortDateString() }\" already exists. Skipping...");
+                    return false;
+                }
 
+                try
+                {
+                    sw.Start();
+                    db.BeginTransaction();
 
+                    var dbShiftId = db.Insert("kpis", kpi);
 
-        //            cmd.Prepare();
-        //            var x = cmd.ExecuteNonQuery();
+                    db.CompleteTransaction();
+                    sw.Stop();
 
-        //            trans.Save("trans");
-        //            trans.Commit();
-        //        }
-        //        catch(Exception ex) 
-        //{
+                    log.Info($"Execution of StoreKPIs took {sw.ElapsedMilliseconds}ms");
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex.Message, ex);
+                    db.AbortTransaction();
+                    sw.Stop();
 
-        //            trans.Rollback();
-        //        }
-        //        finally
-        //        {
+                    return false;
+                }
 
-        //        }
-        //    }
-
-        //    return true;
-        //}
+                return true;
+            }
+        }
     }
 }
