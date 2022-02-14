@@ -86,7 +86,7 @@ namespace Shifts_ETL
         private static void CalculateKPIs()
         {
             new NumberOfPaidBreaks().CalculatePaidBreaks();
-
+            new MaxAllowance().CalculatePaidBreaks();
             AnyKey();
         }
 

@@ -31,6 +31,45 @@ namespace Shifts_ETL.Com.DB
             return new Database(connectionString, new PostgreSQLDatabaseProvider());
         }
 
+        public static double GetMaxAllowanceInLastTwoWeeks()
+        {
+            double maxCost = 0;
+            var quary = @"select allowance_cost 
+                          from allowances 
+                          where allowance_cost = (
+                             select Max(a.allowance_cost) 
+                             from shifts s
+                             join allowances a on s.shift_id = a.shift_id 
+                             where s.shift_date BETWEEN
+                                 NOW()::DATE-EXTRACT(DOW FROM NOW())::INTEGER-14 
+                                 AND NOW()::DATE-EXTRACT(DOW from NOW())::INTEGER)";
+
+            using (var db = Create())
+            {
+                try
+                {
+                    sw.Start();
+                    db.BeginTransaction();
+
+                    maxCost = db.ExecuteScalar<double>(quary);
+
+                    db.CompleteTransaction();
+                    sw.Stop();
+
+                    log.Info($"Execution of GetMaxAllowanceInLastTwoWeeks took {sw.ElapsedMilliseconds}ms");
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex.Message, ex);
+                    db.AbortTransaction();
+                    sw.Stop();
+                }
+            }
+
+            return maxCost;
+        }
+
+
         public static int GetNumberOfPaidBreaks()
         {
             int count = 0;
