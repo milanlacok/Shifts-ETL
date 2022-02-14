@@ -28,6 +28,7 @@ Note:
 - Radjen je samo insert u bazu tako da uvek proverava da li record postoji u bazi, ako ne dodaje ga ako postoji skippuje
 - Krenuo sam sa unit testovima, ali nekako mi se otrglo kontorli nedostatak vremena a visak problema sa samom tehnologijom i komponentama ciji dependancy-i su pomalo nemoguci :)
 - Error handling nije bas najlepsi, ali se bar sve loguje
+- shift_cost je malo nabudzen :)
 
 Nadam se da cete malo i uzivati u ovoj ludnici od app-a.
 
