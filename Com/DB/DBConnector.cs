@@ -69,6 +69,40 @@ namespace Shifts_ETL.Com.DB
             return maxCost;
         }
 
+        public static double GetShortestShift()
+        {
+            double shortestShift = 0;
+            var quary = @"SELECT EXTRACT(epoch FROM (SELECT 
+                            shifts.shift_finish - shifts.shift_start as interval
+                            FROM   shifts
+                            ORDER  BY shifts.shift_finish - shifts.shift_start asc
+                            limit 1))/3600";
+
+            using (var db = Create())
+            {
+                try
+                {
+                    sw.Start();
+                    db.BeginTransaction();
+
+                    shortestShift = db.ExecuteScalar<double>(quary);
+
+                    db.CompleteTransaction();
+                    sw.Stop();
+
+                    log.Info($"Execution of GetShortestShift took {sw.ElapsedMilliseconds}ms");
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex.Message, ex);
+                    db.AbortTransaction();
+                    sw.Stop();
+                }
+            }
+
+            return shortestShift;
+        }
+
 
         public static int GetNumberOfPaidBreaks()
         {

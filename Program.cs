@@ -76,6 +76,7 @@ namespace Shifts_ETL
         {
             new NumberOfPaidBreaks().CalculatePaidBreaks();
             new MaxAllowance().CalculateMaxAllowanceInLastTwoWeeks();
+            new ShortestShiftDuration().CalculateShortestShift();
             AnyKey();
         }
 
